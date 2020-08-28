@@ -1,0 +1,1 @@
+((3) 1 ((#"/home/herbivore/buildd/RAD/gradebook/rgb.rkt" . deserialize-info:course-v0)) 2 ("f2020" "CMA") () (c (h ! (equal) (alp052 0 "ACLT 053" (? . 0) 82342 (? . 1) ()) (aclt053 0 "ALP 053" (? . 0) 52342 (? . 1) ()) (engl101 0 "English 101" (? . 0) 12342 (? . 1) ())) c (h ! (equal))))
