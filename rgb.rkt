@@ -2,28 +2,29 @@
 
 (require racket/serialize)
 (require racket/include)
+(require racket/list)
 (include "io-rgb.rkt")
 
 ;;; RGB: the RAD GradeBook
 
 #|
 	DATA STRUCTURES as STRUCTS and LISTS
-      Semesters (list): list of semesters
+      Semesters (listfo semester hash-tables): list of semesters
       Semester (hash) hash table of courses
       Course (struct): title semester CRN section roster
-      Roster (list): student-1 student-2 student-3 ... 
+      Roster (listof student structs): student-1 student-2 student-3 ... 
       Student (struct): name email course id gradebook attendance
-      Gradebook (list): assignment-1 assignment-2 assignment-3 ... 
+      Gradebook (listof assignment structs): assignment-1 assignment-2 assignment-3 ... 
       Assignment (struct): title deadline grade late?
-      Attendance (list): session-1 session-2 session-3 ... 
+      Attendance (listof session pairs): session-1 session-2 session-3 ... 
 		  Session    (pair): session-date attend? 
 |#
 
 
 #|
    TODO
-     - absences counter built into student struct
      - given a roster, print all students absent/late/present on given day
+     - absences counter built into student struct
      - find student by searching across courses/rosters
      - UI work
 
@@ -251,11 +252,19 @@
 ;; search for student in roster by last name.
 ;; Consumes a roster and a student's last name as a string,
 ;; returns a matching student struct.
-;; ex. print-student find-student roster "Rob" -> Rob<#student>
+;; ex. (find-student-ln roster "Willer") -> Willer<#student>
+;;
+;; Star (*) version takes a list of name strings and returns multiple student structs
+;; ex. (find-student-ln* roster '("Rob" "Karen")) -> '(Rob<#student> Karen#<student>)
 (define find-student-ln
   (lambda (roster student)
     (or (findf (lambda (x)
                  (equal? student (student-last x))) roster)
+        (printf "~a not a last name in roster.\n" student))))
+
+(define find-student-ln*
+  (lambda (roster students)
+    (or (map (lambda (x) (find-student-ln roster x)) students)
         (printf "~a not a last name in roster.\n" student))))
 
 ;; find-student-fn: ((listof student) . string) -> (student?)
@@ -263,11 +272,20 @@
 ;; search for student in roster by first name.
 ;; Consumes a roster and a student's first name as a string,
 ;; returns a matching student struct.
+;; ex. (find-student roster "Rob") -> Rob<#student>
 ;; ex. (print-student (find-student roster "Rob")) -> printed info about Rob 
+;;
+;; Star (*) version takes a list of name strings and returns multiple student structs
+;; ex. (find-student roster '("Rob" "Karen")) -> '(Rob<#student> Karen#<student>)
 (define find-student-fn
   (lambda (roster student)
     (or (findf (lambda (x)
                  (equal? student (student-first x))) roster)
+        (printf "~a not a first name in roster.\n" student))))
+
+(define find-student-fn*
+  (lambda (roster students)
+    (or (map (lambda (x) (find-student-fn roster x)) students)
         (printf "~a not a first name in roster.\n" student))))
 
 ;; find-student-id: ((listof student) . string) -> (student?)
@@ -276,11 +294,55 @@
 ;; Consumes a roster and a student's ID number as an exact number.
 ;; returns a matching student struct.
 ;; ex. (print-student (find-student roster 34)) -> printed info about Floppy 
+;;
+;; Star (*) version takes a list of name strings and returns multiple student structs
+;; ex. (find-student roster '("Rob" "Karen")) -> '(Rob<#student> Karen#<student>)
 (define find-student-id
   (lambda (roster student)
     (or (findf (lambda (x)
                  (equal? student (student-id x))) roster)
         (printf "~a not a student ID number in roster.\n" student))))
+
+(define find-student-id*
+  (lambda (roster students)
+    (or (map (lambda (x) (find-student-id roster x)) students)
+        (printf "~a not a student ID number in roster.\n" student))))
+
+;; find-student-index; (roster . first-name) -> (index)
+;; consumes a roster and a first name, returns their index number
+;; For use with (find-student-number) to produce absentee lists, etc.
+;; (find-student-index '(Rob Sherryl Donte) "Sherryl") -> 1
+;; (find-student-index '(Rob Sherryl Donte) "Willy")
+;;      -> "Willy not a first name in roster"
+;; Star (*) version takes a list of first names,
+;; and returns a list of roster numbers
+;; (find-student-number* '(Rob Sherryl Donte) '("Sherryl" "Donte")) -> '(2 3)
+(define find-student-index
+  (lambda (roster name)
+    (index-of roster (find-student-fn roster name))))
+
+(define find-student-index*
+  (lambda (roster names)
+    (map (lambda (x) (find-student-index roster x)) names)))
+
+
+;; find-student-number; (roster . first-name) -> (roster number)
+;; consumers a roster and a first name, returns the roster number
+;; NOT the index. For use with (sub-roster) to produce absentee lists, etc.
+;; (find-student-number '(Rob Sherryl Donte) "Sherryl") -> 2
+;; (find-student-number '(Rob Sherryl Donte) "Willy")
+;;      -> "Willy not a first name in roster"
+;;
+;; Star (*) version takes a list of first names,
+;; and returns a list of roster numbers
+;; (find-student-number* '(Rob Sherryl Donte) '("Sherryl" "Donte")) -> '(2 3)
+(define find-student-number
+  (lambda (roster name)
+    (add1 (find-student-index roster name))))
+
+(define find-student-number*
+  (lambda (roster names)
+    (map (lambda (x) (find-student-number roster x)) names)))
 
 ;; get-gradebook: (student) -> (listof assignments)
 ;; used by (print-gradebook)
@@ -404,10 +466,10 @@
                                           (printf "~a\n" x)]))
                                  (student-attendance (car args)))])])))
 
-;; run-attendance: (roster day noshows tardy) -> batch-runs attendance
-;; consume roster, day then aleady-parsed sub-rosters
+;; run-attendance-number: (roster day noshows tardy) -> batch-runs attendance
+;; consume roster, day then aleady-parsed sub-rosters as lists of numbers
 ;; adds correct session to each student's attendance
-(define run-attendance
+(define run-attendance-number
   (lambda (roster day noshows tardy)
     (let* ([states (list `(,day absent) `(,day late) `(,day present))]
            [groups (list
@@ -416,6 +478,25 @@
                     (sub-roster-inv roster
                                     (append noshows tardy)))])
       (map batch-add-session! groups states))))
+
+;; run-attendance-fn: (roster day noshows tardy) -> batch-runs attendance
+;; consume roster, day then two lists of first names as strings 
+;; adds correct session to each student's attendance
+(define run-attendance-fn
+  (lambda (roster day noshows tardy)
+    (let* ([states
+             (list `(,day absent) `(,day late) `(,day present))]
+           [not-in-class
+             (find-student-fn* roster noshows)]
+           [late-to-class
+             (find-student-fn* roster tardy)]
+           [in-class
+             (remove* (append not-in-class late-to-class) roster)])
+      (map batch-add-session!
+           (list not-in-class late-to-class in-class)
+           states))))
+
+
 
 ;; sub-roster: (roster . (list of ints)) -> (listof students)
 ;; consume roster and list of ints, return list of roster items

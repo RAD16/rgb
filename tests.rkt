@@ -12,8 +12,26 @@
 (include "load.rkt")
 (include "ui.rkt")
 
+week
 
-(pick-item
- (student-gradebook (car roster))
- assignment-title)
+(define roster-101a
+  (get-roster (hash-ref (car SEM) '101a)))
+
+
+(print-attend (find-student-fn roster-101a
+                               "Floppy"))
+
+(print-roster roster-101a)
+
+(run-attendance-name roster-101a
+                     3333333    ;; date
+                     '("Scary") ;; absent
+                     '("Schlurpen" "Willer")) ;; late
+
+(print-roster
+ (remove*
+  (append
+   (find-student-fn* roster-101a '("Willer" "Rob"))
+   (find-student-fn* roster-101a '("Dang Jesus" "Karen")))
+  roster-101a))
 

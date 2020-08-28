@@ -1,6 +1,6 @@
-;#lang racket
-;(require racket/include)
-;(include "rgb.rkt")
+#lang racket
+(require racket/include)
+(include "rgb.rkt")
 ;(include "ui.rkt")
 
 ;; test courses
@@ -28,21 +28,19 @@
 
 
 ;;; TESTS
-(create-semester! 'f2019)
-(create-semester! 's2020)
-(create-semester! 'f2020)
+(map create-semester! '(f2019 s2020 f2020))
 
 (create-course! (car SEM) '101a (list "English 101" "fall 2020" 123129 "CSM" roster))
-(create-course! (car SEM) 'aclt  dcourse2)
-(create-course! (car SEM) 'alp dcourse3)
+(create-course! (car SEM) 'aclt dcourse3)
+(create-course! (car SEM) 'alp dcourse2)
 
-(add-assignment! Karen Essay-3)
-(add-assignment! Karen Essay-1)
-(add-assignment! Karen Essay-2)
+(map (lambda (x y) (create-course! (car SEM) x y))
+     '(101a aclt alp)
+     '((list "English 101" "fall 2020" 123129 "CSM" roster) dcourse2 dcourse3))
 
-(add-assignment! Rob Essay-1)
-(add-assignment! Rob Essay-2)
-(add-assignment! Rob Essay-3)
+
+(map (lambda (x) (add-assignment! Karen x)) '(Essay-3 Essay-1 Essay-2))
+(map (lambda (x) (add-assignment! Rob x)) '(Essay-1 Essay-2 Essay-3))
 
 (define monday '(20200901 present))
 (define tuesday '(20200902 present))
@@ -51,5 +49,6 @@
 (define friday '(20200905 present))
 
 (define week (list monday tuesday wednesday thursday friday))
+
 
 (set! roster (course-roster (hash-ref (car SEM) '101a)))
