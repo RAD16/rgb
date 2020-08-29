@@ -211,6 +211,16 @@
                     (student-first (car roster)))
                 (print-roster (cdr roster))))))
 
+;; *** NEEDS TESTING / DEPLOYING
+(define print-roster.v2
+	(lambda (roster)
+    (cond ((null? roster) (display "----") (newline))
+          (else (for-each (lambda (x)
+                            (printf "~a, ~a\n"
+                                              (student-last x)
+                                              (student-first x)))
+                          roster)))))
+
 ;; user-std-info: (void) -> string of student info
 ;; Read user input to be added to student struct
 (define user-std-info 
@@ -445,12 +455,38 @@
     (set-student-attendance! student 
       (cons session (student-attendance student))))) 
 
+
+;; push-session!: (student . session) -> (void)
+;; *** like (add-session!) but calls (set-absences-count!)
+;; *** on the student after adding the day's session. 
+;; Add session pair to student attendance sheet
+;; consumes a student and a session pair, adds session onto
+;; student's attendance sheet
+(define push-session!
+	(lambda (session student)
+    (and 
+     (set-student-attendance! student 
+                              (cons session
+                                    (student-attendance student)))
+     (set-absences-count! student)))) 
+
 ;; batch-add-session!: (session . roster) -> (void)
 ;; consumes a session pair and a roster list,
 ;; adds a session to every student in roster
 (define batch-add-session!
   (lambda (session roster)
     (map (lambda (x) (add-session! session x)) roster)))
+
+;; batch-push-session!: (session . roster) -> (void)
+;; *** like (batch-add-session!) but maps (push-session!)
+;; *** on the roster to update student absence counters.
+;; consumes a session pair and a roster list,
+;; adds a session to every student in roster,
+;; then updates each student's absence counters.
+(define batch-push-session!
+  (lambda (session roster)
+    (map (lambda (x) (push-session! session x)) roster)))
+
 
 ;; print-attend: (student) -> (void)
 ;; consumes a student struct, prints attendance info
@@ -533,10 +569,14 @@
                  (student-attendance student)))))
 
 
-;; set-absences-count: (student) -> (void)
+;; set-absences-count!: (student) -> (void)
 ;; consumes a student struct,
 ;; counts the number of absences in their attendance record,
 ;; sets their absences struct field to that count.
+(define set-absences-count!
+  (lambda (student)
+    (set-student-absences! student
+                           (count-absences student))))
 
 ;; count-lates: (student) -> int
 ;; consumes a student struct, returns number of latenessnes
@@ -577,6 +617,25 @@
       (map batch-add-session!
 	   states
            (list not-in-class late-to-class in-class)))))
+
+;; push-attendance-fn: (roster day noshows tardy) -> batch-runs attendance
+;; *** like run-attendance-fn, but updates everyone's absence counters
+;; consume roster, day then two lists of first names as strings 
+;; adds correct session to each student's attendance
+(define push-attendance-fn
+  (lambda (roster day noshows tardy)
+    (let* ([states
+            (list `(,day absent) `(,day late) `(,day present))]
+           [not-in-class
+            (find-student-fn* noshows roster)]
+           [late-to-class
+            (find-student-fn* tardy roster)]
+           [in-class
+            (remove* (append not-in-class late-to-class) roster)])
+      (map batch-push-session!
+           states
+           (list not-in-class late-to-class in-class)))))
+
 
 ;; sub-roster: (roster . (list of ints)) -> (listof students)
 ;; consume roster and list of ints, return list of roster items

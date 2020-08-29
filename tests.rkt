@@ -18,18 +18,33 @@
 
 (course-roster (hash-ref (car SEM) '101a))
 
-(print-attend (find-student-fn "Scary" roster-101a))
+(print-attend (find-student-fn "Rob" roster-101a))
+
+(student-absences (find-student-fn "Rob" roster-101a))
+
+(map print-attend (find-student-fn*
+  '("Rob"
+    "Scary")
+  roster-101a))
+
+(map student-absences (find-student-fn*
+      '("Rob"
+        "Scary")
+      roster-101a))
+
+(student-absences (find-student-fn "Schlurpen" roster-101a))
+
+(batch-push-session! '(2021 absent) roster-101a)
+
+(push-attendance-fn roster-101a
+                    2021
+                    '("Karen")
+                    '("Scary" "Schlurpen"))
 
 (print-roster
  roster-101a)
 
-
-
 (run-attendance-fn roster-101a
-                     42355    ;; date
-                     '("Scary") ;; absent
-                     '("Schlurpen" "Willer")) ;; late
-
-(absent? '(20200901 absent))
-
-
+                     0012    ;; date
+                     '("Dang Jesus") ;; absent
+                     '("Scary")) ;; late

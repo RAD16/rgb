@@ -9,6 +9,7 @@
 (define dcourse3 (list "ACLT 053" "f2020" 82342 "CMA" '()))
 
 ;; test semesters
+(define SEM '())
 (set! SEM (cons (hash 'F2020 dcourse1) SEM))
 
 ;;; Test cases 
@@ -16,14 +17,19 @@
 (define new-Rob (student "P-Penis" "Rob" "new-email@penis" "English 101" 3))
 
 (student-absences new-Rob)
+(set-student-absences! new-Rob 0)
+
 (set-absences-count! new-Rob)
 
-
-(add-session! '(20200906 absent) new-Rob)
+(push-session! '(20200908 absent) new-Rob)
 
 (print-attend-report new-Rob)
-(count-absences Karen)
-(set-student-absences! new-Rob 0)
+
+(print-student (car roster-101a))
+roster-101a
+
+
+;;;;;;;;;;;;;;;;
 
 
 (define Rob (student  "Penis" "Rob" "email@penis" "English 101" 3)) 
