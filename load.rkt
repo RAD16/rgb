@@ -12,6 +12,20 @@
 (set! SEM (cons (hash 'F2020 dcourse1) SEM))
 
 ;;; Test cases 
+
+(define new-Rob (student "P-Penis" "Rob" "new-email@penis" "English 101" 3))
+
+(student-absences new-Rob)
+(set-absences-count! new-Rob)
+
+
+(add-session! '(20200906 absent) new-Rob)
+
+(print-attend-report new-Rob)
+(count-absences Karen)
+(set-student-absences! new-Rob 0)
+
+
 (define Rob (student  "Penis" "Rob" "email@penis" "English 101" 3)) 
 (define Karen (student  "Vag" "Karen" "email@vag" "English 101" 2)) 
 (define Floppy (student  "Pooper" "Floppy" "fpoops@floppy" "English 101" 34)) 
@@ -21,6 +35,7 @@
 (define Big-Gulp (student  "Gully" "Willer" "willer@gully" "English 101" 21)) 
 
 (define roster (list Rob Karen Floppy Scary Jebus Schlurp Big-Gulp))
+roster
 
 (define Essay-1 (assignment "Politics of Education" 20200919 95 #f))
 (define Essay-2 (assignment "Research Project" 20201215 75 #f))
@@ -49,7 +64,6 @@
 (define friday '(20200905 present))
 
 (define week (list monday tuesday wednesday thursday friday))
-
-(map (lambda (x) (batch-add-session! (get-roster (hash-ref (car SEM) '101a)) x)) week)
-
+(print-roster
+ (course-roster (hash-ref (car SEM) '101a)))
 (set! roster (course-roster (hash-ref (car SEM) '101a)))

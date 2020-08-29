@@ -16,23 +16,20 @@
 (define roster-101a
   (get-roster (hash-ref (car SEM) '101a)))
 
+(course-roster (hash-ref (car SEM) '101a))
 
-(print-attend (find-student-fn roster-101a
-                               "Scary"))
+(print-attend (find-student-fn "Scary" roster-101a))
 
-(print-roster roster-101a)
+(print-roster
+ roster-101a)
+
+
 
 (run-attendance-fn roster-101a
-                     44    ;; date
+                     42355    ;; date
                      '("Scary") ;; absent
                      '("Schlurpen" "Willer")) ;; late
 
 (absent? '(20200901 absent))
 
-(print-roster
- (remove*
-  (append
-   (find-student-fn* roster-101a '("Willer" "Rob"))
-   (find-student-fn* roster-101a '("Dang Jesus" "Karen")))
-  roster-101a))
 

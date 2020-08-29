@@ -47,7 +47,19 @@
 	 [roster #:mutable]))
 
 ;; Student: struct of student info
+;; student.v2: adds absences counter
 (serializable-struct student
+  (last
+  first
+  email 
+  course 
+  id 
+  [absences #:auto #:mutable]
+  [gradebook #:auto #:mutable] 
+  [attendance #:auto #:mutable]) #:auto-value '())
+
+;; student.v1
+(serializable-struct student.v1
 	(last
    first
 	 email 
@@ -56,12 +68,13 @@
 	 [gradebook #:auto #:mutable] 
 	 [attendance #:auto #:mutable]) #:auto-value '())
 
+
 ;; Assignment: struct of assignment info
 (serializable-struct assignment 
   (title
   [deadline #:mutable]
-  [score #:mutable]
-  late))
+  [score #:mutable #:auto]
+  [late #:mutable #:auto]) #:auto-value 0)
 
 
 ;;;;;;;;;; Functions on data ;;;;;;;;;;;;;
@@ -120,9 +133,9 @@
 ;; print-courses: semester hash -> (void)
 ;; Consumes a semester hash and displays the keys (course titles)
 (define print-courses
-	(lambda (table)
-    (cond [(null? table) display "Empty: No courses to list"]
-          [else (map course-title (get-courses table))])))
+	(lambda (sem)
+    (cond [(null? sem) display "Empty: No courses to list"]
+          [else (map course-title (get-courses sem))])))
 
 
 ;; print-course-info: (semester hash . course title) -> (void)
@@ -447,7 +460,6 @@
     (for-each (lambda (x) (printf "~a\n" x)) (student-attendance student))))
 
 ;; print-attend-report: (student . option) -> (void)
-;; *** ??? DEPRECATE *** in favor of using (sub-roster).
 ;; consumes student and an option, prints sessions student
 ;; was listed as "option" ('present 'late 'absent).
 ;; (lambda args) makes it variadic, so if no option is provided
@@ -455,14 +467,19 @@
 ;; print-attend-report.v2
 (define print-attend-report
   (lambda args
-    (cond [(< 2 (length args)) (display "Too many arguments. Expect: (student? option)")]
-          [(not (student? (car args))) (display "Expected student struct.")]
-          [else (cond [(null? (cdr args)) (print-attend (car args))]
-                      [(not (or (eq? (cadr args) 'present)
-                                (eq? (cadr args) 'absent)
-                                (eq? (cadr args) 'late)))
-                       (display "Bad option! Expected no option, or 'present, 'absent, 'late")]
-                      [else (map (lambda (x)
+    (cond [(< 2 (length args))
+            (display "Too many arguments. Expect: (student? option)")]
+          [(not (student? (car args)))
+             (display "Expected student struct.")]
+          [else (cond [(null? (cdr args))
+                         ;; if there is no second arg...
+                         (print-attend (car args))]
+                      [(not (ormap (curry equal? (cadr args))
+                                '(present late absent)))
+                                ;; if the second arg isn't
+                                ;; one of the above...
+                         (display "Bad option! Expected no option, or 'present, 'absent, 'late")]
+                      [else (for-each (lambda (x)
                                    (cond [(eq? (cadr args) (cadr x))
                                           (printf "~a\n" x)]))
                                  (student-attendance (car args)))])])))
@@ -514,6 +531,12 @@
     (length (filter (lambda (x)
                    (equal? 'absent (cadr x)))
                  (student-attendance student)))))
+
+
+;; set-absences-count: (student) -> (void)
+;; consumes a student struct,
+;; counts the number of absences in their attendance record,
+;; sets their absences struct field to that count.
 
 ;; count-lates: (student) -> int
 ;; consumes a student struct, returns number of latenessnes
