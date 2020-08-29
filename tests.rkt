@@ -10,23 +10,24 @@
 (require racket/include)
 (include "rgb.rkt")
 (include "load.rkt")
-(include "ui.rkt")
+(include "ui-rgb.rkt")
 
-week
 
 (define roster-101a
   (get-roster (hash-ref (car SEM) '101a)))
 
 
 (print-attend (find-student-fn roster-101a
-                               "Floppy"))
+                               "Scary"))
 
 (print-roster roster-101a)
 
-(run-attendance-name roster-101a
-                     3333333    ;; date
+(run-attendance-fn roster-101a
+                     44    ;; date
                      '("Scary") ;; absent
                      '("Schlurpen" "Willer")) ;; late
+
+(absent? '(20200901 absent))
 
 (print-roster
  (remove*

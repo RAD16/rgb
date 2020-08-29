@@ -39,8 +39,8 @@
      '((list "English 101" "fall 2020" 123129 "CSM" roster) dcourse2 dcourse3))
 
 
-(map (lambda (x) (add-assignment! Karen x)) '(Essay-3 Essay-1 Essay-2))
-(map (lambda (x) (add-assignment! Rob x)) '(Essay-1 Essay-2 Essay-3))
+(map (lambda (x) (add-assignment! x Karen)) '(Essay-3 Essay-1 Essay-2))
+(map (lambda (x) (add-assignment! x Rob)) '(Essay-1 Essay-2 Essay-3))
 
 (define monday '(20200901 present))
 (define tuesday '(20200902 present))
@@ -50,5 +50,6 @@
 
 (define week (list monday tuesday wednesday thursday friday))
 
+(map (lambda (x) (batch-add-session! (get-roster (hash-ref (car SEM) '101a)) x)) week)
 
 (set! roster (course-roster (hash-ref (car SEM) '101a)))

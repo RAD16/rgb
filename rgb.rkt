@@ -23,7 +23,7 @@
 
 #|
    TODO
-     - given a roster, print all students absent/late/present on given day
+     - given a roster, print all students present on given day
      - absences counter built into student struct
      - find student by searching across courses/rosters
      - UI work
@@ -139,6 +139,7 @@
 		(printf "Section: ~a\n"      
             (course-section course))))
 
+;; ?? dafuq is going on here? 
 ;; find-course: ((course-hash) . string) -> (student?)
 ;; Find Course by title
 ;; search for course in hash-table.
@@ -227,7 +228,7 @@
 ;; consumes a course struct, student struct, and adds the student
 ;; onto the roster list of the course.
 (define add-student!
-	(lambda (course student)
+	(lambda (student course)
 		(set-course-roster! course
                         (cons student (course-roster course)))))
 
@@ -257,13 +258,13 @@
 ;; Star (*) version takes a list of name strings and returns multiple student structs
 ;; ex. (find-student-ln* roster '("Rob" "Karen")) -> '(Rob<#student> Karen#<student>)
 (define find-student-ln
-  (lambda (roster student)
+  (lambda (student roster)
     (or (findf (lambda (x)
                  (equal? student (student-last x))) roster)
         (printf "~a not a last name in roster.\n" student))))
 
 (define find-student-ln*
-  (lambda (roster students)
+  (lambda (students roster)
     (or (map (lambda (x) (find-student-ln roster x)) students)
         (printf "~a not a last name in roster.\n" student))))
 
@@ -278,14 +279,14 @@
 ;; Star (*) version takes a list of name strings and returns multiple student structs
 ;; ex. (find-student roster '("Rob" "Karen")) -> '(Rob<#student> Karen#<student>)
 (define find-student-fn
-  (lambda (roster student)
+  (lambda (student roster)
     (or (findf (lambda (x)
                  (equal? student (student-first x))) roster)
         (printf "~a not a first name in roster.\n" student))))
 
 (define find-student-fn*
-  (lambda (roster students)
-    (or (map (lambda (x) (find-student-fn roster x)) students)
+  (lambda (students roster)
+    (or (map (lambda (x) (find-student-fn x roster)) students)
         (printf "~a not a first name in roster.\n" student))))
 
 ;; find-student-id: ((listof student) . string) -> (student?)
@@ -298,13 +299,13 @@
 ;; Star (*) version takes a list of name strings and returns multiple student structs
 ;; ex. (find-student roster '("Rob" "Karen")) -> '(Rob<#student> Karen#<student>)
 (define find-student-id
-  (lambda (roster student)
+  (lambda (student roster)
     (or (findf (lambda (x)
                  (equal? student (student-id x))) roster)
         (printf "~a not a student ID number in roster.\n" student))))
 
 (define find-student-id*
-  (lambda (roster students)
+  (lambda (students roster)
     (or (map (lambda (x) (find-student-id roster x)) students)
         (printf "~a not a student ID number in roster.\n" student))))
 
@@ -318,11 +319,11 @@
 ;; and returns a list of roster numbers
 ;; (find-student-number* '(Rob Sherryl Donte) '("Sherryl" "Donte")) -> '(2 3)
 (define find-student-index
-  (lambda (roster name)
+  (lambda (name roster)
     (index-of roster (find-student-fn roster name))))
 
 (define find-student-index*
-  (lambda (roster names)
+  (lambda (names roster)
     (map (lambda (x) (find-student-index roster x)) names)))
 
 
@@ -337,11 +338,11 @@
 ;; and returns a list of roster numbers
 ;; (find-student-number* '(Rob Sherryl Donte) '("Sherryl" "Donte")) -> '(2 3)
 (define find-student-number
-  (lambda (roster name)
+  (lambda (name roster)
     (add1 (find-student-index roster name))))
 
 (define find-student-number*
-  (lambda (roster names)
+  (lambda (names roster)
     (map (lambda (x) (find-student-number roster x)) names)))
 
 ;; get-gradebook: (student) -> (listof assignments)
@@ -387,7 +388,7 @@
 ;; with the new list of assignments (gradebook)
 ;; ex. (add-assignment! (create-assignment (user-assignment-info)))
 (define add-assignment!
-	(lambda (student assignment)
+	(lambda (assignment student)
     (set-student-gradebook! student 
                             (cons assignment (student-gradebook student))))) 
 
@@ -408,7 +409,7 @@
 ;; find-assignment: (listof assignment) -> assignment struct
 ;; find assignment by title
 (define find-assignment
-  (lambda (gradebook assignment)
+  (lambda (assignment gradebook)
     (or (findf (lambda (x)
                  (equal? assignment (assignment-title x))) gradebook)
         (printf "~a not an assignment in gradebook.\n" assignment))))
@@ -427,7 +428,7 @@
 ;; consumes a student and a session pair, adds session onto
 ;; student's attendance sheet
 (define add-session!
-	(lambda (student session)
+	(lambda (session student)
     (set-student-attendance! student 
       (cons session (student-attendance student))))) 
 
@@ -435,8 +436,8 @@
 ;; consumes a session pair and a roster list,
 ;; adds a session to every student in roster
 (define batch-add-session!
-  (lambda (roster session)
-    (map (lambda (x) (add-session! x session)) roster)))
+  (lambda (session roster)
+    (map (lambda (x) (add-session! session x)) roster)))
 
 ;; print-attend: (student) -> (void)
 ;; consumes a student struct, prints attendance info
@@ -466,6 +467,64 @@
                                           (printf "~a\n" x)]))
                                  (student-attendance (car args)))])])))
 
+;; absent?: (date) -> boolean
+;; consumes a date as int, returns true
+;; if an associated pair evals to 'absent.
+;; Intended for use to return lists of absent students
+;; given a date. 
+(define absent?
+  (lambda (date)
+    (equal? 'absent (cadr date))))
+
+;; late?: (date) -> boolean
+;; consumes a date as int, returns true
+;; if an associated pair evals to 'late.
+;; Intended for use to return lists of late students
+;; given a date. 
+(define late?
+  (lambda (date)
+    (equal? 'late (cadr date))))
+
+;; get-absent: (listof students . date) -> (listof students)
+;; consumes a roster, and returns a new roster
+;; with only the students who have been absent on date.
+;; ex. (get-absent '(Rob Karen Sherryl) 20200901) -> '(Sherryl)
+(define get-absent
+  (lambda (date roster)
+    (filter (lambda (x) (absent?
+                         (assoc date (student-attendance x))))
+            roster)))
+
+;; get-late: (listof students . date) -> (listof students)
+;; consumes a roster, and returns a new roster (listof student-structs)
+;; with only the students who have been late on date.
+;; ex. (get-late '(Rob Karen Sherryl) 20200901) -> '(Sherryl)
+(define get-late
+  (lambda (date roster)
+    (filter (lambda (x) (late?
+                         (assoc date (student-attendance x))))
+            roster)))
+
+;; count-absences: (student) -> int
+;; consumes a student struct, returns number of absences
+;; in a student's attendance report.
+;; (count-absences <student>) -> 3
+(define count-absences
+  (lambda (student)
+    (length (filter (lambda (x)
+                   (equal? 'absent (cadr x)))
+                 (student-attendance student)))))
+
+;; count-lates: (student) -> int
+;; consumes a student struct, returns number of latenessnes
+;; in a student's attendance report.
+;; (count-lates <student>) -> 3
+(define count-lates
+  (lambda (student)
+    (length (filter (lambda (x)
+                      (equal? 'late (cadr x)))
+                    (student-attendance student)))))
+
 ;; run-attendance-number: (roster day noshows tardy) -> batch-runs attendance
 ;; consume roster, day then aleady-parsed sub-rosters as lists of numbers
 ;; adds correct session to each student's attendance
@@ -473,11 +532,11 @@
   (lambda (roster day noshows tardy)
     (let* ([states (list `(,day absent) `(,day late) `(,day present))]
            [groups (list
-                    (sub-roster roster noshows)
-                    (sub-roster roster tardy)
-                    (sub-roster-inv roster
-                                    (append noshows tardy)))])
-      (map batch-add-session! groups states))))
+                    (sub-roster noshows roster)
+                    (sub-roster tardy roster)
+                    (sub-roster-inv 
+		      (append noshows tardy) roster))])
+      (map batch-add-session! states groups))))
 
 ;; run-attendance-fn: (roster day noshows tardy) -> batch-runs attendance
 ;; consume roster, day then two lists of first names as strings 
@@ -487,16 +546,14 @@
     (let* ([states
              (list `(,day absent) `(,day late) `(,day present))]
            [not-in-class
-             (find-student-fn* roster noshows)]
+             (find-student-fn* noshows roster)]
            [late-to-class
-             (find-student-fn* roster tardy)]
+             (find-student-fn* tardy roster)]
            [in-class
              (remove* (append not-in-class late-to-class) roster)])
       (map batch-add-session!
-           (list not-in-class late-to-class in-class)
-           states))))
-
-
+	   states
+           (list not-in-class late-to-class in-class)))))
 
 ;; sub-roster: (roster . (list of ints)) -> (listof students)
 ;; consume roster and list of ints, return list of roster items
@@ -508,7 +565,7 @@
 ;;     (sub-roster '(Jamal Harris Squeek Frank) '(1 0)) ->
 ;;       '(Jamal Harris Squeek Frank)
 (define sub-roster
-  (lambda (roster picks)
+  (lambda (picks roster)
     (cond [(null? picks) '()]
           [(member 0 picks) roster]
           [else
@@ -527,7 +584,7 @@
 ;;       '(Jamal Harris Squeek Frank)
 ;;     (sub-roster '(Jamal Harris Squeek Frank) '()) -> '()
 (define sub-roster-inv
-  (lambda (roster picks)
+  (lambda (picks roster)
     (cond [(null? picks) '()]
           [(member 0 picks) roster]
           [else
@@ -572,7 +629,7 @@
 ;; ex. (sort-attend '('Jamal 'Lashawn 'Ibrahim) '(1 3)) -> '('Jamal 'Ibrahim)
 ;;                                                         '(Lashawn)
 (define sort-attend
-  (lambda (lst picks)
+  (lambda (picks lst)
     (cond [(null? picks) '()]
           [(eq? 0 (car picks)) lst]
           [else

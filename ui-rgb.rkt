@@ -101,7 +101,6 @@
            (newline)
            (let ([input (read)])
              (case input))
-               ()
            (menu-course
             (pick-item (hash-values sem)
                        (lambda (x) (course-title x))))])))
@@ -165,6 +164,7 @@
 
 ;; test
 
+#|
 (menu-main.v3 (car SEM))
 
 (hash-keys (car SEM))
@@ -173,3 +173,4 @@
 
 (menu-course (hash-ref (car SEM) '101a))
 (hash-keys (car SEM))
+|#
